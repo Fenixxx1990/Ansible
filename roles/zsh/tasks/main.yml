@@ -1,0 +1,45 @@
+---
+- name: Установка необходимых пакетов (zsh, git, curl)
+  ansible.builtin.apt:
+    name:
+      - zsh
+      - git
+      - curl
+    state: present
+    update_cache: yes
+
+- name: Установка ZSH как оболочки по умолчанию для пользователя {{ zsh_user }}
+  ansible.builtin.user:
+    name: "{{ zsh_user }}"
+    shell: /usr/bin/zsh
+
+- name: Проверка наличия Oh My Zsh
+  ansible.builtin.stat:
+    path: "{{ zsh_user_home }}/.oh-my-zsh"
+  register: omz
+
+- name: Установка Oh My Zsh (unattended)
+  ansible.builtin.shell: |
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  become_user: "{{ zsh_user }}"
+  when: not omz.stat.exists
+  register: oh_my_zsh_install
+  changed_when: oh_my_zsh_install.rc == 0
+
+- name: Клонирование плагинов (autosuggestions и highlighting)
+  ansible.builtin.git:
+    repo: "{{ item.repo }}"
+    dest: "{{ zsh_user_home }}/.oh-my-zsh/custom/plugins/{{ item.name }}"
+    version: master
+  become_user: "{{ zsh_user }}"
+  loop:
+    - { name: 'zsh-autosuggestions', repo: 'https://github.com/zsh-users/zsh-autosuggestions' }
+    - { name: 'zsh-syntax-highlighting', repo: 'https://github.com/zsh-users/zsh-syntax-highlighting.git' }
+
+- name: Генерация .zshrc из шаблона J2
+  ansible.builtin.template:
+    src: zshrc.j2
+    dest: "{{ zsh_user_home }}/.zshrc"
+    owner: "{{ zsh_user }}"
+    group: "{{ zsh_user }}"
+    mode: '0644'

@@ -1,0 +1,3 @@
+---
+zsh_user: vagrant
+zsh_user_home: "/home/{{ zsh_user }}"

@@ -1,0 +1,8 @@
+---
+- name: All configs
+  hosts: cluster
+  become: true
+  roles:
+    - zsh
+
+

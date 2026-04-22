@@ -1,0 +1,24 @@
+# Path to your Oh My Zsh installation.
+export ZSH="{{ zsh_user_home }}/.oh-my-zsh"
+
+# Set name of the theme to load
+ZSH_THEME="agnoster"
+
+# Plugins
+plugins=(
+  git npm node yarn docker
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+)
+
+# Скрываем user@hostname
+DEFAULT_USER="{{ zsh_user }}"
+
+source $ZSH/oh-my-zsh.sh
+
+# Настройки подсказок
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
+
+# Очистка контекста для темы agnoster
+prompt_context() { echo "" }
