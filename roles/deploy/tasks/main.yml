@@ -1,3 +1,11 @@
 ---
-- name: Demo
-  command: echo "DEMO"
+- name: Создание сети
+  community.docker.docker_network:
+    name: "{{ networkName }}"
+    driver: overlay
+
+- name: Выкладка сервисов
+  include_tasks: "../services/{{ item }}/service.yml"
+  vars:
+    svc_name: "{{ item }}"
+  loop: "{{ services }}"

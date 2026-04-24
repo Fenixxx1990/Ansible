@@ -11,6 +11,7 @@
         name:
           - ca-certificates
           - curl
+          - python3-pip
         update_cache: true
         cache_valid_time: 86400
 
@@ -36,7 +37,7 @@
         state: present
         update-cache: true
 
-    - name: Установка Docker-ce
+    - name: Установка Docker
       apt:
         name:
           - docker-ce
@@ -53,6 +54,12 @@
         state: restarted
         enabled: true
 
+- name: Настройка дополнительных пакетов python
+  block:
+    - name: Установка pip пакетов
+      pip:
+        name: docker
+        
 - name: Завершение установки
   block:
     - name: Добавление пользователя в группу Docker
