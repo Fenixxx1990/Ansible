@@ -11,10 +11,14 @@
       tags: deploy
     - role: swarm_init
       tags: swarm_init
+    - role: swarm_leave
+      node_name: server2
+      tags: swarm_leave
+
 
 - name: Managers 
   hosts: managers
-  become: true
+  # become: true
   roles:
     - role: preconfig
       tags: preconfig
@@ -24,7 +28,7 @@
 
 - name: Workers
   hosts: workers
-  become: true
+  # become: true
   roles:
     - role: preconfig
       tags: preconfig

@@ -1,0 +1,60 @@
+---
+# 1. Получаем детальную информацию о ноде через server1
+- name: "Получение информации о ноде {{ node_name }}"
+  community.docker.docker_node_info:
+    name: "{{ node_name }}"
+  register: node_info
+  delegate_to: server1
+  ignore_errors: yes
+
+# 2. Разжалование менеджера до воркера (если нужно)
+- name: "Разжалование менеджера {{ node_name }} до воркера"
+  community.docker.docker_node:
+    hostname: "{{ node_name }}"
+    role: worker
+  delegate_to: server1
+  when: 
+    - node_info.nodes is defined and node_info.nodes | length > 0
+    - node_info.nodes[0].Spec.Role == 'manager'
+  ignore_errors: yes
+
+# 3. Перевод в drain (остановка приема задач)
+- name: "Перевод {{ node_name }} в статус drain"
+  community.docker.docker_node:
+    hostname: "{{ node_name }}"
+    availability: drain
+  delegate_to: server1
+  when: node_info.nodes is defined and node_info.nodes | length > 0
+
+# 4. Ждем, пока контейнеры уедут (на самой ноде)
+- name: "Ожидание остановки всех контейнеров на {{ node_name }}"
+  community.docker.docker_host_info:
+  register: host_info_res
+  delegate_to: "{{ node_name }}"
+  until: host_info_res.host_info.ContainersRunning == 0
+  retries: 12
+  delay: 10
+  when: node_info.nodes is defined and node_info.nodes | length > 0
+  ignore_errors: yes
+
+# 5. Команда leave на самой ноде
+- name: "Нода {{ node_name }} покидает Swarm"
+  community.docker.docker_swarm:
+    state: absent
+    force: yes
+  delegate_to: "{{ node_name }}"
+  register: leave_res
+  ignore_errors: yes
+
+# 6. Удаление записи о ноде из списка менеджера (используем ID для точности)
+- name: "Удаление ноды {{ node_name }} из списка кластера"
+  community.docker.docker_swarm:
+    state: remove
+    # Используем ID из шага 1, чтобы избежать ошибки "ambiguous" (дубликатов имен)
+    node_id: "{{ node_info.nodes[0].ID }}"
+  delegate_to: server1
+  when: 
+    - node_info.nodes is defined and node_info.nodes | length > 0
+    # Удаляем, если команда leave прошла успешно или нода уже недоступна
+    - leave_res is succeeded or node_info.nodes[0].Status.State != 'ready'
+  ignore_errors: yes
