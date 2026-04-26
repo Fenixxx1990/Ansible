@@ -1,0 +1,33 @@
+worker_processes 2;
+
+events { 
+    worker_connections 1024; 
+}
+
+http {
+    # Рекомендуется добавить для корректной работы типов файлов
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    server {
+        listen 80;
+        server_name image.local;
+
+        # Правило для API и загрузок
+        # Используем ^~ чтобы это правило было приоритетнее любых регулярных выражений
+        location ^~ /upload {
+            proxy_pass http://api:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # Все остальное летит в фронтенд
+        location / {
+            proxy_pass http://app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}

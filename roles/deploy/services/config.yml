@@ -1,0 +1,15 @@
+---
+- name: "[{{ svc_name }}] Конфигурация конфига"
+  block:
+    - name: "[{{ svc_name }}] Создаём конфиг"
+      ansible.builtin.include_tasks: "config-create.yml"
+  tags: "{{ svc_name }}"
+  
+  rescue:
+    - name: "[{{ svc_name }}] Удаляем сервис"
+      community.docker.docker_swarm_service:
+        name: "{{ svc_name }}"
+        state: absent 
+      
+    - name: "[{{ svc_name }}] Создаём конфиг"
+      ansible.builtin.include_tasks: "config-create.yml"

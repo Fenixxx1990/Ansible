@@ -6,6 +6,7 @@
         name: "{{ svc_name }}"
         image: "{{ registry_name }}{{ svc_name }}:{{ version }}"
         state: present
+        force_update: true
         networks:
           - name: "{{ network_name }}"
         publish:
